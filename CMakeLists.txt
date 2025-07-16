@@ -1,67 +1,81 @@
-cmake_minimum_required(VERSION 2.6)
-PROJECT(TestOscpack)
+cmake_minimum_required(VERSION 3.10)
+project(Oscpack)
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
+set(BUILD_EXAMPLES 0)
+set(BUILD_TESTS 0)
 
 # separate versions of NetworkingUtils.cpp and UdpSocket.cpp are provided for Win32 and POSIX
 # the IpSystemTypePath selects the correct ones based on the current platform
+if(WIN32)
+    set(IpSystemTypePath ip/win32)
+    set(LIBS ${LIBS} Ws2_32 winmm)
+else(WIN32)
+    set(IpSystemTypePath ip/posix)
+endif(WIN32)
 
-IF(WIN32)
- set(IpSystemTypePath ip/win32)
- set(LIBS ${LIBS} Ws2_32 winmm)
-ELSE(WIN32)
- set(IpSystemTypePath ip/posix)
-ENDIF(WIN32)
-
-ADD_LIBRARY(oscpack 
-
-ip/IpEndpointName.h
-ip/IpEndpointName.cpp
-
-ip/NetworkingUtils.h
-${IpSystemTypePath}/NetworkingUtils.cpp
-
-ip/UdpSocket.h
-${IpSystemTypePath}/UdpSocket.cpp
-
-ip/PacketListener.h
-ip/TimerListener.h
-
-osc/OscTypes.h
-osc/OscTypes.cpp 
-osc/OscHostEndianness.h
-osc/OscException.h
-osc/OscPacketListener.h
-osc/MessageMappingOscPacketListener.h
-osc/OscReceivedElements.h
-osc/OscReceivedElements.cpp
-osc/OscPrintReceivedElements.h
-osc/OscPrintReceivedElements.cpp
-osc/OscOutboundPacketStream.h
-osc/OscOutboundPacketStream.cpp
-
+set(OSCPACK_HEADERS
+    ip/IpEndpointName.h
+    ip/NetworkingUtils.h
+    ip/UdpSocket.h
+    ip/PacketListener.h
+    ip/TimerListener.h
+    osc/OscTypes.h
+    osc/OscHostEndianness.h
+    osc/OscException.h
+    osc/OscPacketListener.h
+    osc/MessageMappingOscPacketListener.h
+    osc/OscReceivedElements.h
+    osc/OscPrintReceivedElements.h
+    osc/OscOutboundPacketStream.h
 )
 
+set(OSCPACK_SOURCES
+    ip/IpEndpointName.cpp
+    ${IpSystemTypePath}/NetworkingUtils.cpp
+    ${IpSystemTypePath}/UdpSocket.cpp
+    osc/OscTypes.cpp 
+    osc/OscReceivedElements.cpp
+    osc/OscPrintReceivedElements.cpp
+    osc/OscOutboundPacketStream.cpp
+)
 
-ADD_EXECUTABLE(OscUnitTests tests/OscUnitTests.cpp)
-TARGET_LINK_LIBRARIES(OscUnitTests oscpack ${LIBS})
+add_library(oscpack STATIC
+  ${OSCPACK_HEADERS}
+  ${OSCPACK_SOURCES}
+)
 
-ADD_EXECUTABLE(OscSendTests tests/OscSendTests.cpp)
-TARGET_LINK_LIBRARIES(OscSendTests oscpack ${LIBS})
+target_include_directories(oscpack PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-ADD_EXECUTABLE(OscReceiveTest tests/OscReceiveTest.cpp)
-TARGET_LINK_LIBRARIES(OscReceiveTest oscpack ${LIBS})
+target_compile_options(oscpack PRIVATE
+    "$<$<CONFIG:DEBUG>:-O1>"
+    "$<$<CONFIG:RELWITHDEBINFO>:-O2>"
+    "$<$<CONFIG:RELEASE>:-Ofast>"
+    "$<$<OR:$<CONFIG:RELWITHDEBINFO>,$<CONFIG:RELEASE>>:-Werror>"
+)
 
+if (BUILD_TESTS)
+    ADD_EXECUTABLE(OscUnitTests tests/OscUnitTests.cpp)
+    TARGET_LINK_LIBRARIES(OscUnitTests oscpack ${LIBS})
 
-ADD_EXECUTABLE(OscDump examples/OscDump.cpp)
-TARGET_LINK_LIBRARIES(OscDump oscpack ${LIBS})
+    ADD_EXECUTABLE(OscSendTests tests/OscSendTests.cpp)
+    TARGET_LINK_LIBRARIES(OscSendTests oscpack ${LIBS})
 
-ADD_EXECUTABLE(SimpleReceive examples/SimpleReceive.cpp)
-TARGET_LINK_LIBRARIES(SimpleReceive oscpack ${LIBS})
+    ADD_EXECUTABLE(OscReceiveTest tests/OscReceiveTest.cpp)
+    TARGET_LINK_LIBRARIES(OscReceiveTest oscpack ${LIBS})
+endif(BUILD_TESTS)
 
-ADD_EXECUTABLE(SimpleSend examples/SimpleSend.cpp)
-TARGET_LINK_LIBRARIES(SimpleSend oscpack ${LIBS})
+if (BUILD_EXAMPLES)
+    ADD_EXECUTABLE(OscDump examples/OscDump.cpp)
+    TARGET_LINK_LIBRARIES(OscDump oscpack ${LIBS})
 
+    ADD_EXECUTABLE(SimpleReceive examples/SimpleReceive.cpp)
+    TARGET_LINK_LIBRARIES(SimpleReceive oscpack ${LIBS})
+
+    ADD_EXECUTABLE(SimpleSend examples/SimpleSend.cpp)
+    TARGET_LINK_LIBRARIES(SimpleSend oscpack ${LIBS})
+endif(BUILD_EXAMPLES)
 
 if(MSVC)
   # Force to always compile with W4
