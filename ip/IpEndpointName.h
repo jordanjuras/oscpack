@@ -64,10 +64,10 @@ public:
     bool IsMulticastAddress() const { return ((address >> 24) & 0xFF) >= 224 && ((address >> 24) & 0xFF) <= 239; }
 
 	enum { ADDRESS_STRING_LENGTH=17 };
-	void AddressAsString( char *s ) const;
+	void AddressAsString( char *s, size_t strLen ) const;
 
 	enum { ADDRESS_AND_PORT_STRING_LENGTH=23};
-	void AddressAndPortAsString( char *s ) const;
+	void AddressAndPortAsString( char *s, size_t strLen ) const;
 };
 
 inline bool operator==( const IpEndpointName& lhs, const IpEndpointName& rhs )
