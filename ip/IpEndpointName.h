@@ -37,6 +37,7 @@
 #ifndef INCLUDED_OSCPACK_IPENDPOINTNAME_H
 #define INCLUDED_OSCPACK_IPENDPOINTNAME_H
 
+#include <cstddef>
 
 class IpEndpointName{
     static unsigned long GetHostByName( const char *s );
